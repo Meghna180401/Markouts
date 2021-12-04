@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="node_modules/leaflet/dist/leaflet.css">
+  <link rel="stylesheet" href="node_modules/leaflet-routing-machine/dist/leaflet-routing-machine.css">
+  <!--The leaflet CDN 
+    <link rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+    integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+    crossorigin="" />
+  <script defer src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+    integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+    crossorigin=""></script>-->
+  <script defer src="node_modules/leaflet/dist/leaflet.js"></script>
+  <script defer src="node_modules/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+  <script defer src="node_modules/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+  <script defer src="script.js"></script>
+
+  <title>Markout // Map your workouts</title>
+
+</head>
+
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-5 sidebar">
+        <div class="text-center fs-3 fw-bold brand">Markout</div>
+        <div class="d-flex flex-row justify-content-center my-3">
+          <button type="button" onclick="showForm()" class="btn btn-outline-primary mx-3 new-workout">New
+            Workout</button>
+          <button type="button" onclick="reset()" class="btn btn-outline-primary form-submit">Remove Workouts</button>
+        </div>
+        <small class="my-1 text-center fst-italic guidelines hidden">Click on destination location in the map and check
+          for
+          your route
+          and
+          distance from the sidebar.</small>
+        <ul class="workouts my-1 py-2">
+          <form class="form hidden">
+            <div class="row">
+              <div class="col">
+                <!-- <select onchange="toggleTypes(this)" class="form-select form-input-type">
+                  <option selected>Type</option>
+                  <option value="1">Running</option>
+                  <option value="2">Cycling</option>
+                </select> -->
+                <select onchange="getWorkoutType(this)" class="form-select form-input-type">
+                  <option selected>Type</option>
+                  <option value="1">Running</option>
+                  <option value="2">Cycling</option>
+                </select>
+              </div>
+              <!-- <div class="col">
+                <input type="text" class="form-control form-input-elev hidden" placeholder="Elev Gain (m)">
+              </div> -->
+              <div class="col">
+                <input type="text" class="form-control form-input-dist" placeholder="Distance (km)">
+              </div>
+            </div>
+            <div class="row my-3">
+              <div class="col">
+                <input type="text" class="form-control form-input-time" placeholder="Total time (min)">
+              </div>
+              <div class="col">
+                <input type="text" class="form-control form-input-recovTime" placeholder="Recovery time (min)">
+              </div>
+            </div>
+            <button type="button" onclick="submitForm()" class="btn btn-outline-primary form-submit">Submit</button>
+          </form>
+        </ul>
+      </div>
+      <div id="map" class="col"></div>
+    </div>
+  </div>
+</body>
+
+</html>
