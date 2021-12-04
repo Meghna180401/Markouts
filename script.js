@@ -10,6 +10,7 @@ const inputDist = document.querySelector(".form-input-dist");
 const guidelines = document.querySelector(".guidelines");
 const editBtn = document.querySelector(".edit-icon");
 const deleteBtn = document.querySelector(".delete-icon");
+const workoutsContainer = document.querySelector(".workouts");
 const dist = 4;
 let workoutType;
 let map, mapEvent;
@@ -17,6 +18,7 @@ let routeDisplayed = 0;
 let sourceCoords = []; //Source coordinates
 let locCoords = []; //Location coordinates
 let workouts = [];
+let markers = [];
 let routingControl;
 
 class Workout {
@@ -79,6 +81,7 @@ if (navigator.geolocation) {
   });
 }
 
+//Customising the source location icon
 let srcIcon = new L.Icon({
   iconUrl:
     "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
@@ -90,17 +93,19 @@ let srcIcon = new L.Icon({
   shadowSize: [41, 41]
 });
 
+//Function to load the map at current position
 function loadMap(position) {
   const latitude = position.coords.latitude;
   const longitude = position.coords.longitude;
   locCoords = [latitude, longitude];
   sourceCoords = locCoords;
-  //console.log(locCoords);
   map = L.map("map").setView(sourceCoords, 15);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution:
       '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   }).addTo(map);
+
+  //For dark themed map
   // L.tileLayer(
   //   "https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png",
   //   {
@@ -108,18 +113,17 @@ function loadMap(position) {
   //       '© <a href="https://stadiamaps.com/">Stadia Maps</a>, © <a href="https://openmaptiles.org/">OpenMapTiles</a> © <a href="http://openstreetmap.org">OpenStreetMap</a> contributors'
   //   }
   // ).addTo(map);
+
   L.marker(sourceCoords, { icon: srcIcon }).addTo(map);
 
   getLocalStorage();
 
   //Handling clicks on map
   map.on("click", mapClicked.bind(this));
-
-  // this.wokouts.forEach(workoutObj=>{
-  //   this.renderWorkoutMarker(workoutObj);
-  // })
+  workoutsContainer.addEventListener("click", moveToPopup.bind(this));
 }
 
+//Function to handle clicks on map
 function mapClicked(mapE) {
   if (form.classList.contains("hidden")) return;
   //Get coordinates of destination clicked
@@ -131,15 +135,20 @@ function mapClicked(mapE) {
   routeDisplayed++;
 }
 
+//Function to show the input form
 function showForm() {
   guidelines.classList.remove("hidden");
   form.classList.remove("hidden");
   //Clear input field values
   inputTime.value = inputRecTime.value = inputDist.value = "";
 }
+
+//Function to hide the input form
 function hideForm() {
   form.classList.add("hidden");
 }
+
+//Function to get the workout type from select menu
 function getWorkoutType(elementValue) {
   if (elementValue.value == 1) {
     workoutType = "running";
@@ -158,14 +167,9 @@ function submitForm() {
   const positiveInputsCheck = (...inputs) => inputs.every(inp => inp >= 0);
 
   //Get data from the form
-
   const totalTime = +inputTime.value;
   const recovTime = +inputRecTime.value;
   const dist = +inputDist.value;
-  // console.log(workoutType);
-  // console.log(locCoords);
-
-  //Calculate distance from the destination location provided
 
   if (typeof workoutType == "undefined") {
     return alert("Please select a workout type");
@@ -211,7 +215,7 @@ function submitForm() {
 
 //Function to Render workout on the map
 function renderWorkoutMarker(workoutObj) {
-  L.marker(workoutObj.coords)
+  let myMarker = L.marker(workoutObj.coords)
     .addTo(map)
     .bindPopup(
       L.popup({
@@ -224,14 +228,23 @@ function renderWorkoutMarker(workoutObj) {
     )
     .setPopupContent(workoutObj.description)
     .openPopup();
+  myMarker.id = workoutObj.id;
+  markers.push(myMarker);
 }
 
-function removeWorkoutMarker(workoutObj) {}
+function removeWorkoutMarker(workoutObj) {
+  let reqdMarker = markers.find(function (marker) {
+    return marker.id == workoutObj.id;
+  });
+  map.removeLayer(reqdMarker);
+}
 
 //Function to render workout in the list
 function renderWorkoutList(workoutObj) {
   let html = `
-  <li class="workout workout--${workoutObj.type}" data-id="${workoutObj.id}">
+  <li class="workout workout--${workoutObj.type}" data-id="${
+    workoutObj.id
+  }" id="list-${workoutObj.id}">
     <h2 class="workout__title">${workoutObj.description}</h2>
     <div class="icons">
       <img src="assets/icons8-edit-24.png" class="edit-icon" onclick="editWorkout(${
@@ -276,6 +289,20 @@ function renderWorkoutList(workoutObj) {
   form.insertAdjacentHTML("afterend", html);
 }
 
+//Function to delete a workout from list
+function removeWorkoutList(reqdWorkout) {
+  document.getElementById(`list-${reqdWorkout.id}`).remove();
+}
+
+//Function to remove item from workouts array
+function removeWorkoutItem(reqdWorkout) {
+  let idx = workouts.indexOf(reqdWorkout);
+  if (idx > -1) {
+    workouts.splice(idx, 1);
+  }
+  setLocalStorage();
+}
+
 function setLocalStorage() {
   localStorage.setItem("workouts", JSON.stringify(workouts));
 }
@@ -283,7 +310,6 @@ function setLocalStorage() {
 /* Dont use this Local storage API for large amounts of data because it slows down*/
 function getLocalStorage() {
   let data = JSON.parse(localStorage.getItem("workouts"));
-  console.log(data);
   if (!data) return;
   workouts = data;
   workouts.forEach(work => {
@@ -322,18 +348,52 @@ function removeRoutingControl() {
   }
 }
 
-function editWorkout(id) {
-  console.log(id);
+//Function to delete a workout
+function deleteWorkout(id) {
   let reqdWorkout = workouts.find(function (obj) {
     return obj.id == id;
   });
-  console.log(reqdWorkout);
-  // removeWorkoutMarker();
-  // showForm();
+  removeWorkoutMarker(reqdWorkout);
+  removeWorkoutList(reqdWorkout);
+  removeWorkoutItem(reqdWorkout);
 }
 
-function deleteWorkout(id) {
-  console.log(id);
+//Function to edit a workout
+function editWorkout(id) {
+  let reqdWorkout = workouts.find(function (obj) {
+    return obj.id == id;
+  });
+  showFormEdit(reqdWorkout);
+  removeWorkoutMarker(reqdWorkout);
+  removeWorkoutList(reqdWorkout);
+  removeWorkoutItem(reqdWorkout);
+}
+
+//Function to show the form for edit
+function showFormEdit(workoutObj) {
+  guidelines.classList.remove("hidden");
+  form.classList.remove("hidden");
+  //Clear input field values
+  inputTime.value = workoutObj.totalTime;
+  inputRecTime.value = workoutObj.recovTime;
+  inputDist.value = workoutObj.distance;
+  // if (workoutObj.type == "running") inputType.value = 1;
+  // if (workoutObj.type == "cycling") inputType.value = 2;
+}
+
+//Function to move to workout place on map
+function moveToPopup(e) {
+  // Fix for an error when we click on a workout before the map has loaded
+  if (!map) return;
+  const workoutEl = e.target.closest(".workout");
+  if (!workoutEl) return;
+  const workout = workouts.find(work => work.id === workoutEl.dataset.id);
+  map.setView(workout.coords, 15, {
+    animate: true,
+    pan: {
+      duration: 1
+    }
+  });
 }
 
 function reset() {
